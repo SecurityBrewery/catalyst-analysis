@@ -1,0 +1,163 @@
+openapi: 3.0.3
+info:
+  title: Catalyst Analysis API
+  description: API documentation for various endpoints.
+  version: dev
+  contact:
+    name: Catalyst Team
+    email: info@security-brewery.com
+servers:
+  - description: Catalyst Analysis API
+    url: '{scheme}://{address}:{port}'
+    variables:
+      address:
+        default: 127.0.0.1
+      port:
+        default: "8080"
+      scheme:
+        default: http
+        enum:
+          - https
+          - http
+tags:
+  - name: services
+    description: Operations related to services
+  - name: enrichment
+    description: Operations related to data enrichment
+  - name: suggestions
+    description: Operations related to suggestions
+paths:
+  /services:
+    get:
+      summary: Retrieve the list of available services
+      operationId: listServices
+      tags: [ services ]
+      description: Retrieve the list of available services
+      responses:
+        '200':
+          description: List of available services
+          content: { application/json: { schema: { $ref: "#/components/schemas/ServiceListResponse" } } }
+  /services/{service_id}/{resource_type_id}/{resource_id}:
+    get:
+      summary: Retrieve a specific resource from a service
+      operationId: getResource
+      tags: [ services ]
+      description: Retrieve a specific resource from a service
+      parameters:
+        - { in: path, name: service_id, required: true, schema: { type: string } }
+        - { in: path, name: resource_type_id, required: true, schema: { type: string } }
+        - { in: path, name: resource_id, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Data enrichment response for specific name and resource
+          content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } }
+  /services/{service_id}/{resource_type_id}/{resource_id}/{attribute_id}:
+    get:
+      summary: Retrieve a specific attribute from a resource
+      operationId: getAttribute
+      tags: [ services ]
+      description: Retrieve a specific attribute from a resource
+      parameters:
+        - { in: path, name: service_id, required: true, schema: { type: string } }
+        - { in: path, name: resource_type_id, required: true, schema: { type: string } }
+        - { in: path, name: resource_id, required: true, schema: { type: string } }
+        - { in: path, name: attribute_id, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Data enrichment response for specific name and resource
+          content: { application/json: { schema: { $ref: "#/components/schemas/Attribute" } } }
+
+  /enrich:
+    get:
+      summary: Enrich a value with data from various services
+      operationId: enrich
+      tags: [ enrichment ]
+      description: Enrich a value with data from various services
+      parameters:
+        - { in: query, name: value, required: true, schema: { type: string } }
+        - { in: query, name: limit, required: false, schema: { type: integer }, description: "Limit the number of enrichments, default is unlimited" }
+      responses:
+        '200':
+          description: Data enrichment response
+          content: { application/json: { schema: { $ref: "#/components/schemas/ResourceListResponse" } } }
+
+  /enrich/{service_id}/{resource_type_id}:
+    get:
+      summary: Enrich a value with data from various services
+      operationId: enrichResource
+      tags: [ enrichment ]
+      description: Enrich a value with data from various services
+      parameters:
+        - { in: path, name: service_id, required: true, schema: { type: string } }
+        - { in: path, name: resource_type_id, required: true, schema: { type: string } }
+        - { in: query, name: value, required: true, schema: { type: string } }
+        - { in: query, name: limit, required: false, schema: { type: integer }, description: "Limit the number of enrichments, default is unlimited" }
+      responses:
+        '200':
+          description: Data enrichment response
+          content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } }
+
+  /suggest:
+    get:
+      summary: Suggest resources based on a partial value
+      operationId: suggest
+      tags: [ suggestions ]
+      description: Suggest resources based on a partial value
+      parameters:
+        - { in: query, name: partial, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Suggestions response
+          content: { application/json: { schema: { $ref: "#/components/schemas/ResourceListResponse" } } }
+
+components:
+  schemas:
+    ServiceListResponse:
+      type: object
+      properties:
+        services: { type: array, items: { $ref: "#/components/schemas/Service" } }
+      required: [ services ]
+    ResourceListResponse:
+      type: object
+      properties:
+        resources: { type: array, items: { $ref: "#/components/schemas/Resource" } }
+      required: [ resources ]
+
+    Service:
+      type: object
+      properties:
+        id: { type: string, example: "misp1" }
+        type: { type: string, example: "MISP" }
+        resource_types: { type: array, items: { $ref: "#/components/schemas/ResourceType" } }
+      required: [ id, name, type, resource_types ]
+    ResourceType:
+      type: object
+      properties:
+        id: { type: string, example: "event" }
+        name: { type: string, example: "Event" }
+        enrichment_patterns: { type: array, items: { type: string }, example: [ "https://misp1.internal/events/view/\\d+" ] }
+        attributes: { type: array, items: { type: string }, example: [ "tag" ] }
+      required: [ id, name, enrichment_patterns, attributes ]
+
+    Resource:
+      type: object
+      properties:
+        service: { type: string, example: "misp1" }
+        type: { type: string, example: "event" }
+
+        id: { type: string, example: "163447" }
+        name: { type: string, example: "Event 163447" }
+        icon: { type: string, example: "Brain" }
+        description: { type: string, example: "Event 163447 ..." }
+        url: { type: string, example: "https://misp1.internal/events/view/163447" }
+
+        attributes: { type: array, items: { $ref: "#/components/schemas/Attribute" } }
+      required: [ service, type, id, name, icon, attributes ]
+    Attribute:
+      type: object
+      properties:
+        id: { type: string, example: "tag" }
+        name: { type: string, example: "Tag" }
+        icon: { type: string, example: "Tag" }
+        value: { type: string, example: "tlp:white" }
+      required: [ id, name, icon, value ]

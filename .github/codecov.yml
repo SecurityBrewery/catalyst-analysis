@@ -1,0 +1,13 @@
+coverage:
+  status:
+    project:
+      default:
+        threshold: 5%
+    patch: off
+comment:
+  layout: diff
+ignore:
+  - "api"
+parsers:
+  go:
+    partials_as_hits: true

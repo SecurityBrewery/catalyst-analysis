@@ -1,0 +1,12 @@
+{
+  "services": {
+    "attack": {
+      "plugin": "attack",
+      "config": {}
+    },
+    "vulnerability": {
+      "plugin": "vulnerability",
+      "config": {}
+    }
+  }
+}

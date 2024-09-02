@@ -1,0 +1,48 @@
+name: CI
+on:
+  push: { branches: [ main ] }
+  pull_request:
+  release: { types: [ published ] }
+
+jobs:
+  fmt:
+    name: Fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.23' }
+
+      - run: make install
+      - run: make fmt
+
+      - run: git diff --exit-code
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.23' }
+
+      - uses: golangci/golangci-lint-action@v6
+        with: { version: 'v1.60.1' }
+
+      - run: make install
+      - run: make lint_spectral
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.23' }
+
+      - run: make test-coverage
+
+      - uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.out
+          token: ${{ secrets.CODECOV_TOKEN }}
